@@ -1,8 +1,8 @@
-name: ArabSeed Updater 🤖
+name: ArabSeed Updater
 
 on:
   schedule:
-    - cron: '0 */6 * * *' # كل 6 ساعات
+    - cron: '0 */6 * * *'
   workflow_dispatch:
 
 permissions:
