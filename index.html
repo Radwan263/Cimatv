@@ -4,146 +4,54 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Radwan App</title>
-        <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+        <title>Radwan Deep Diver</title>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-            body { background-color: #f0f0f0; color: #333; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
-            header { background: #b71c1c; color: white; padding: 15px; text-align: center; position: sticky; top:0; z-index:100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: space-between; }
-            header h1 { margin: 0; font-size: 18px; flex-grow: 1; }
-            .back-icon { font-size: 20px; cursor: pointer; visibility: hidden; }
-            .screen { display: none; padding: 10px; }
-            .active { display: block; animation: fadeIn 0.3s; }
-            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-            .grid-series { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .card-series { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); cursor: pointer; }
+            body { background-color: #121212; color: #fff; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
+            header { background: #800000; padding: 15px; text-align: center; position: sticky; top:0; z-index:100; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+            .card-series { background: #1e1e1e; border-radius: 8px; margin: 10px; overflow: hidden; display:inline-block; width: 45%; vertical-align:top; cursor:pointer; }
             .card-series img { width: 100%; aspect-ratio: 2/3; object-fit: cover; }
-            .card-series h3 { text-align: center; font-size: 14px; margin: 8px 0; color: #b71c1c; }
-            .grid-episodes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-            .card-episode { background: white; border: 2px solid #b71c1c; border-radius: 8px; padding: 10px; text-align: center; cursor: pointer; }
-            .card-episode span { display: block; font-weight: bold; font-size: 14px; color: #b71c1c; }
-            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; }
-            .modal-content { background: white; width: 80%; max-width: 300px; border-radius: 15px; padding: 20px; text-align: center; position: relative; }
-            .modal-close { position: absolute; top: 10px; left: 10px; color: #aaa; font-size: 20px; cursor: pointer; }
-            .modal-btn { display: block; width: 100%; padding: 12px; margin: 10px 0; border-radius: 25px; border: 1px solid #b71c1c; background: white; color: #b71c1c; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; }
-            .modal-btn:hover { background: #b71c1c; color: white; }
-            .player-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:2000; display:none; flex-direction:column; justify-content:center; }
-            .close-player { position: absolute; top: 20px; right: 20px; color: white; font-size: 30px; cursor: pointer; z-index: 2001; }
+            .card-series h3 { padding: 5px; font-size: 14px; text-align: center; }
+            .idm-btn { display: block; background: linear-gradient(45deg, #2ecc71, #27ae60); color: white; padding: 12px; margin: 5px 0; text-align: center; text-decoration: none; border-radius: 5px; font-weight: bold; }
+            .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 1000; }
+            .modal-content { background: #222; width: 85%; padding: 20px; border-radius: 10px; text-align: center; }
         </style>
     </head>
     <body>
-        <header>
-            <i class="fas fa-arrow-right back-icon" id="back-btn" onclick="goBack()"></i>
-            <h1 id="header-title">المسلسلات العربية</h1>
-            <i class="fas fa-bars"></i>
-        </header>
-        <div id="screen-series" class="screen active"><div class="grid-series" id="list-series"></div></div>
-        <div id="screen-episodes" class="screen"><div class="grid-episodes" id="list-episodes"></div></div>
+        <header><h1>الجنرال (وضع الغوص)</h1></header>
+        <div id="list" style="text-align:center;"></div>
         <div class="modal-overlay" id="modal">
             <div class="modal-content">
-                <i class="fas fa-times modal-close" onclick="closeModal()"></i>
-                <h3 id="modal-title" style="color:#b71c1c; margin-bottom:20px;">اختر الإجراء</h3>
-                <button class="modal-btn" onclick="showQuality('watch')"><i class="fas fa-eye"></i> مشاهدة</button>
-                <button class="modal-btn" onclick="showQuality('dl')"><i class="fas fa-download"></i> تحميل</button>
-                <div id="quality-options" style="display:none; margin-top:15px; border-top:1px solid #eee; padding-top:10px;"><div id="q-buttons"></div></div>
+                <h3 id="modal-title"></h3>
+                <div id="modal-links"></div>
+                <button onclick="document.getElementById('modal').style.display='none'" style="margin-top:20px; background:none; border:1px solid #777; color:#fff; padding:5px 20px;">إغلاق</button>
             </div>
         </div>
-        <div class="player-overlay" id="player-screen">
-            <i class="fas fa-times close-player" onclick="closePlayer()"></i>
-            <video id="player" playsinline controls><source id="video-source" src="" type="video/mp4" /></video>
-        </div>
-        <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
         <script>
-            const data = [{"title": "2 \u0642\u0647\u0648\u0629", "poster": "https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp", "episodes": []}, {"title": "\u0644\u0627 \u062a\u0631\u062f \u0648\u0644\u0627 \u062a\u0633\u062a\u0628\u062f\u0644", "poster": "https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp", "episodes": []}, {"title": "\u0645\u064a\u062f \u062a\u064a\u0631\u0645", "poster": "https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp", "episodes": []}];
-            let currentSeries = null;
-            let currentEp = null;
-            let historyStack = ['screen-series'];
-            const player = new Plyr('#player');
-
-            function navigate(toScreen, title, showBack=true) {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById(toScreen).classList.add('active');
-                document.getElementById('header-title').innerText = title;
-                document.getElementById('back-btn').style.visibility = showBack ? 'visible' : 'hidden';
-                if(toScreen !== historyStack[historyStack.length-1]) { historyStack.push(toScreen); }
-            }
-            function goBack() {
-                if(historyStack.length > 1) {
-                    historyStack.pop();
-                    const prev = historyStack[historyStack.length-1];
-                    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                    document.getElementById(prev).classList.add('active');
-                    if(prev === 'screen-series') {
-                        document.getElementById('header-title').innerText = "المسلسلات العربية";
-                        document.getElementById('back-btn').style.visibility = 'hidden';
-                    } else {
-                        document.getElementById('header-title').innerText = currentSeries.title;
-                        document.getElementById('back-btn').style.visibility = 'visible';
-                    }
+            const data = [{"title": "\u0645\u064a\u062f \u062a\u064a\u0631\u0645", "poster": "https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp", "episodes": [{"name": "\u0627\u0644\u062d\u0644\u0642\u06299", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTFyM3IyODNodGRweC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvOGVhbXR4MHBsMjk4", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLXpmbGVhNHI0YzFjMy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1ndGVhZDl6NXRidzUuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2w2a3d3bDFzYXhlNA"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06298", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTZmbzc2cGI1dWRnYi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvZWF4aTZwcnNiZDY0", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWMyMm5tdTMyMjVrci5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC14bzg4bWUxMDRzcW8uaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3h2ZHN4amZtdjZwcw"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06297", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWNtd2t5aGJoZHlwZC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UveWw1ajg2bjhqMno0", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLXhkanNpNm9va2o5OS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC0wamF4ZzVtdThzMzAuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2ppYmJ0OHNtdmUzaw"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06296", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWQ4bzV2aWt4b2w2ai5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2Uvc2xhcDhqczk1ZGRk", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLTJzajBzdnIwdDZxbi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1mazBtYXJrbzFxOHUuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3hocGxvc3lyOWc1bw"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06295", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTE0NHh6dnUxaXJtcS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2Uvbzhrb25pNHkycmlv", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWpubDZmbmNlcWtiMi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC11bWJ6bnp5c25tZzIuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly92b2Uuc3gvZS92bXpvaWNxZWlueHE", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 5": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3FtMWkwdDB4M2ZybA"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06294", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLW96ZnBmZmJhd2xnYy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvbTZ1ZDBxOWdjaXRn", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWx2MDA3NTlzdjE0dS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC14cGt5a2d4dDFscjguaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly92b2Uuc3gvZS9jMmJmaW52NG5hcG8", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 5": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3V4bGMwamljc25ieg"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06293", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTBsZHU3aDF1cjhycy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvN2pjcTBtMXY5MmI1", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2E3bGo5eGVubDQ5MA"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06292", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTJzeDlnb3dxYnZ3ay5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvaDNzeWYwYTlhYzJr", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWVxaXNoZDVlcWxsNy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2JhbmJqeWk1dWc3cw"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06291", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTc5c3lkNmUxc2tudC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvNDlkbWdnNmY0NTAz", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWVsNW9nMnE5cnpvdy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2VlaWJlemNlZnZ0ag"}}]}, {"title": "2 \u0642\u0647\u0648\u0629", "poster": "https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp", "episodes": [{"name": "\u0627\u0644\u062d\u0644\u0642\u062915", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTN2d2RneXVhazI2Zy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvNjg3YXNtaHAwb24w", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWxjd3Q4dmwxNHJvNi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC13dzVtcXU2ZXZmOXQuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lLzAxc211bDVjZ3h3dQ"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u062914", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLThpMTIyNXByc3BwcS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvZGNqaHR1bGZ5N3Vu", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWliZjVidWw2ZGxtMy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC00bGlibmJveWxnOXouaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lLzh1ZThlbWEwNTJrMg"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u062913", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTY1cWY1OG5wd2wxeS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2Uvd2FlNmoyMDhpemYz", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWxhbWw3NWNoeGxmaS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1ienR2dDZmOHI4djEuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3RsNXB3aWNwMWhocw"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u062912", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLW44M21pdHVybzEyZy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UveXNqcmZsZGZ0eG96", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWl1dW12ZXJtdnU3eS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1nbjc2bnh1bWk4OXQuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2JmNmNydGFodHQzMg"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u062911", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLXdrZm1ucThlaXhkaS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvaGFjYzl1aWQwOTZm", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWtyZm4xZDdnaWs1NC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1icjI4OTZ0ODc0cW4uaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly92b2Uuc3gvZS9rbXVyd2xxbXNzdTE", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 5": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3BudmM4b2Vpenp5NA"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u062910", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTBwNm9qejFxeW4wai5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvOW0wZjN3YnJqMW9s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWJnNGd4c2xzbDN4NC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3F2NTVjM3NzMGNtag"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06299", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWUyYXJvYTZ4bjFmYi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvaXk1NWpjYXZpdzRo", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWl3emYwajE2eXF5YS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3M3anZwMWkxcnB3Ng"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06298", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWM3N283bzkzMmkwZi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvcmN3amNtZWphNDYx", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3lzaTRhMjR5cnB1NQ"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06297", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTBoZGNvbmZoMTMwYy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvcWFkbGp4Z2lwZml6", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLXNyOWJiZWVncmE2ZC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3JhZ2cybTJudW8yNA"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06296", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWZ2b2c2NmxoaXFvbi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UveDFqcDBwNmp6OWow", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLTRtcWd2eTZjcnVncy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2NmeW5qcHd3ZmVkeQ"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06295", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWt5bG01ejB1bjE2ai5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvdGJ2NzBkc2Fqa2Q4", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLTFqcXdyMjY3dGhmbi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1pNnhmYTNlbGhwbjguaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2libHlid3hjMWJ6Ng"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06294", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLXV6c2VoZjB6OWgyNy5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvczB0bWUwd3EzdmJk", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWdlaGlyZ3FnbGRvbC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1lYzQ2YnB6NjRoZjYuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2dkN3l4MDg2bmV5dQ"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06293", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLW04Mnk5am5vOWo2ai5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvZWxpaTJmaXB1eTZ2", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLXU4Y3pjcmRtemM3ay5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC0wZ21xcDBiOXZxbm0uaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lLzI0dHpkZWNudWszZw"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06292", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLXU0bzBrbXRhemg3NC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvM2N3bWM1aTN3cmps", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLTE3dmJuc296cXRlMS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC14MzlyazBmbnRqam8uaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3M5aXpwZ3A1d3hsaA"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06291", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLXBhdnZjdDMwOHFpbC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvODExYmoxbTM3OG0w", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC03Mm0zOHlwejV2cXEuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3Vma2J0YzltMTVycA"}}]}, {"title": "\u0644\u0627 \u062a\u0631\u062f \u0648\u0644\u0627 \u062a\u0633\u062a\u0628\u062f\u0644", "poster": "https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp", "episodes": [{"name": "\u0627\u0644\u062d\u0644\u0642\u06296", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTB6c3kwMG8zd2h1MS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UveGs1c2c5cjk4OGh3", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWs3ZHk1enF3c3Y0OC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1oNXdtdW05Y2x6dG4uaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL3h1YnZ3MGhiamZsaw"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06295", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWY4YmdvOGI0NTd2Mi5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvajVybDBiMWZoaXdq", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLTFlMG5zcTZ5OGRwMC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC1xMGlkam1ueTBoZHouaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lLzR1MHNzcXdzaGhyZA"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06294", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWkzdmh2cTkydjJjOC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvNW1jNWY4YmJ3cWM1", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWl3ZzE1ZnIwenNuNC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly92aWRtb2x5Lm5ldC9lbWJlZC00eTQweHNmbWl6cTQuaHRtbA", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 4": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2Jzd2xreXJjemJpbw"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06293", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLTE3aDRxb2Jlemw3ZS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvZWsydjh6cmkyNGdk", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly91cHMydXAuZnVuL2VtYmVkLWEzMjZpejY1YWl1ay5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 3": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lLzFsY2hjbGI4ejV1eA"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06292", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLXo5ZTVhd3RxazVnZC5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvNnNkd2FiMXp2NWZr", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lL2g5dTRuamR3YnMxZg"}}, {"name": "\u0627\u0644\u062d\u0644\u0642\u06291", "links": {"\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 \u0639\u0631\u0628 \u0633\u064a\u062f": "/play.php?url=aHR0cHM6Ly9tLnJldmlld3JhdGUubmV0L2VtYmVkLWE4Z2R6emo2YjFkOS5odG1s", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 1": "https://a.asd.homes/play/?id=aHR0cHM6Ly9zYXZlZmlsZXMuY29tL2UvY2NmbmU5bHc4bTVp", "\ud83d\udcfa \u0633\u064a\u0631\u0641\u0631 2": "https://a.asd.homes/play/?id=aHR0cHM6Ly9maWxlbW9vbi5zeC9lLzFiZmo3cnU2eWcxbg"}}]}];
+            const list = document.getElementById('list');
+            const modal = document.getElementById('modal');
+            data.forEach(s => {
+                if(s.episodes.length) {
+                    s.episodes.forEach(ep => {
+                        let div = document.createElement('div');
+                        div.className = 'card-series';
+                        div.innerHTML = `<img src="${s.poster}"><h3>${ep.name}</h3>`;
+                        div.onclick = () => {
+                            document.getElementById('modal-title').innerText = ep.name;
+                            const d = document.getElementById('modal-links'); d.innerHTML = '';
+                            for (const [k, v] of Object.entries(ep.links)) {
+                                let a = document.createElement('a');
+                                a.className = 'idm-btn'; a.innerText = k; a.href = v;
+                                d.appendChild(a);
+                            }
+                            modal.style.display = 'flex';
+                        };
+                        list.appendChild(div);
+                    });
                 }
-            }
-            const sList = document.getElementById('list-series');
-            data.forEach((item, idx) => {
-                let div = document.createElement('div');
-                div.className = 'card-series';
-                div.innerHTML = `<img src="${item.poster}"><h3>${item.title}</h3>`;
-                div.onclick = () => loadEps(idx);
-                sList.appendChild(div);
             });
-            function loadEps(idx) {
-                currentSeries = data[idx];
-                const eList = document.getElementById('list-episodes');
-                eList.innerHTML = '';
-                // ترتيب الحلقات تصاعدي
-                currentSeries.episodes.sort((a, b) => {
-                    return parseInt(a.name.replace(/\D/g, '')) - parseInt(b.name.replace(/\D/g, ''));
-                });
-                currentSeries.episodes.forEach((ep, eIdx) => {
-                    let div = document.createElement('div');
-                    div.className = 'card-episode';
-                    div.innerHTML = `<span>${ep.name}</span>`;
-                    div.onclick = () => openModal(eIdx);
-                    eList.appendChild(div);
-                });
-                navigate('screen-episodes', currentSeries.title);
-            }
-            function openModal(eIdx) {
-                currentEp = currentSeries.episodes[eIdx];
-                document.getElementById('modal-title').innerText = currentEp.name;
-                document.getElementById('modal').style.display = 'flex';
-                document.getElementById('quality-options').style.display = 'none';
-            }
-            function closeModal() { document.getElementById('modal').style.display = 'none'; }
-            function showQuality(type) {
-                const qDiv = document.getElementById('quality-options');
-                const qBtns = document.getElementById('q-buttons');
-                qDiv.style.display = 'block';
-                qBtns.innerHTML = '';
-                const links = currentEp.links;
-                const qualities = Object.keys(links);
-                if(qualities.length === 0) { qBtns.innerHTML = '<span style="color:red">لا توجد روابط</span>'; return; }
-                qualities.forEach(q => {
-                    let btn = document.createElement('button');
-                    btn.className = 'modal-btn';
-                    btn.innerText = q;
-                    btn.style.background = '#eee'; btn.style.border = 'none';
-                    if(type === 'watch') { btn.onclick = () => playVideo(links[q]); } 
-                    else { btn.onclick = () => window.open(links[q], '_blank'); }
-                    qBtns.appendChild(btn);
-                });
-            }
-            function playVideo(link) {
-                closeModal();
-                document.getElementById('player-screen').style.display = 'flex';
-                document.getElementById('video-source').src = link;
-                document.getElementById('player').load();
-                player.play();
-            }
-            function closePlayer() {
-                player.stop();
-                document.getElementById('player-screen').style.display = 'none';
-            }
         </script>
     </body>
     </html>
