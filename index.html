@@ -95,6 +95,10 @@
                 currentSeries = data[idx];
                 const eList = document.getElementById('list-episodes');
                 eList.innerHTML = '';
+                // ترتيب الحلقات تصاعدي
+                currentSeries.episodes.sort((a, b) => {
+                    return parseInt(a.name.replace(/\D/g, '')) - parseInt(b.name.replace(/\D/g, ''));
+                });
                 currentSeries.episodes.forEach((ep, eIdx) => {
                     let div = document.createElement('div');
                     div.className = 'card-episode';
