@@ -4,132 +4,157 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Radwan App</title>
+        <title>Radwan Player</title>
+        <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-            body { background-color: #121212; color: white; font-family: 'Cairo', sans-serif; margin: 0; padding: 20px; }
-            
-            /* الشاشات */
-            .screen { display: none; animation: fadeIn 0.3s; }
-            .active { display: block; }
-            
-            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+            body { background-color: #000; color: white; font-family: 'Cairo', sans-serif; margin: 0; padding: 20px; }
+            .screen { display: none; }
+            .active { display: block; animation: fadeIn 0.4s; }
+            @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-            /* الأزرار والكروت */
-            .card { background: #1e1e1e; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #333; cursor: pointer; }
-            .card:hover { background: #2a2a2a; }
-            
-            h2 { border-bottom: 2px solid #e50914; padding-bottom: 10px; color: #e50914; }
-            
-            .btn { display: block; width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
-            .btn-watch { background: #e50914; }
-            .btn-dl { background: #007bff; }
-            .btn-back { background: #333; margin-bottom: 15px; width: auto; display: inline-block; padding: 8px 20px; }
+            .card { background: #1a1a1a; padding: 20px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #333; cursor: pointer; }
+            .card:hover { border-color: #e50914; background: #222; }
+            h2 { color: #e50914; border-bottom: 1px solid #333; padding-bottom: 10px; }
 
-            .quality-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-            a { text-decoration: none; color: white; }
+            /* أزرار الجودة */
+            .btn { display: block; width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border:none; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+            .q-720 { background: #27ae60; } 
+            .q-480 { background: #d35400; }
+            .back-btn { background: #333; color: white; padding: 8px 20px; border-radius: 20px; border: none; cursor: pointer; margin-bottom: 20px; }
+
+            /* تنسيق المشغل */
+            #player-container {
+                width: 100%;
+                max-width: 800px;
+                margin: 0 auto;
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: 0 0 20px rgba(229, 9, 20, 0.3);
+            }
+            
+            .plyr {
+                --plyr-color-main: #e50914; /* لون المشغل أحمر زي نتفليكس */
+            }
         </style>
     </head>
     <body>
 
         <div id="screen-series" class="screen active">
-            <h2>📺 اختر المسلسل</h2>
-            <div id="series-list"></div>
+            <h2>🍿 اختر المسلسل</h2>
+            <div id="list-series"></div>
         </div>
 
         <div id="screen-episodes" class="screen">
-            <button class="btn btn-back" onclick="showScreen('screen-series')">🔙 رجوع</button>
-            <h2 id="selected-series-title"></h2>
-            <div id="episodes-list"></div>
+            <button class="back-btn" onclick="show('screen-series')">🔙 خروج</button>
+            <h2 id="title-series"></h2>
+            <div id="list-episodes"></div>
         </div>
 
-        <div id="screen-options" class="screen">
-            <button class="btn btn-back" onclick="showScreen('screen-episodes')">🔙 للحلقات</button>
-            <h2 id="selected-episode-title"></h2>
-            
-            <h3>👁️ مشاهدة</h3>
-            <div id="watch-options" class="quality-grid"></div>
-            
-            <hr style="border-color:#333; margin: 20px 0;">
-            
-            <h3>⬇️ تحميل</h3>
-            <div id="dl-options" class="quality-grid"></div>
+        <div id="screen-quality" class="screen">
+            <button class="back-btn" onclick="show('screen-episodes')">🔙 الحلقات</button>
+            <h2 id="title-episode"></h2>
+            <div id="list-quality"></div>
         </div>
 
+        <div id="screen-player" class="screen" style="text-align:center;">
+            <button class="back-btn" onclick="stopAndBack()">🔙 إغلاق المشغل</button>
+            <h3 id="playing-now" style="color:#aaa; font-size:14px;"></h3>
+            
+            <div id="player-container">
+                <video id="player" playsinline controls>
+                    <source id="video-source" src="" type="video/mp4" />
+                </video>
+            </div>
+            <p style="color:#777; font-size:12px; margin-top:10px;">⚠️ لو الفيديو مشتغلش، ده بسبب حماية المصدر. جرب الجودة التانية.</p>
+        </div>
+
+        <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
         <script>
-            // استقبال البيانات من بايثون
-            const appData = [{"title": "2 \u0642\u0647\u0648\u0629", "episodes": [{"name": "Dynamite Kiss \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 11", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-dynamite-kiss-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-11-%d8%a7%d9%84%d8%ad%d8%a7%d8%af%d9%8a%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-dynamite-kiss-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-11-%d8%a7%d9%84%d8%ad%d8%a7%d8%af%d9%8a%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 6", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-6-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%b3%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-6-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%b3%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 5", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-5-%d8%a7%d9%84%d8%ae%d8%a7%d9%85%d8%b3%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-5-%d8%a7%d9%84%d8%ae%d8%a7%d9%85%d8%b3%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 4", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-4-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-4-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 3", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d8%a7%d9%84%d8%ab%d8%a7%d9%84%d8%ab%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d8%a7%d9%84%d8%ab%d8%a7%d9%84%d8%ab%d8%a9/download/"}}}]}, {"title": "\u0644\u0627 \u062a\u0631\u062f \u0648\u0644\u0627 \u062a\u0633\u062a\u0628\u062f\u0644", "episodes": [{"name": "Dynamite Kiss \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 11", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-dynamite-kiss-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-11-%d8%a7%d9%84%d8%ad%d8%a7%d8%af%d9%8a%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-dynamite-kiss-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-11-%d8%a7%d9%84%d8%ad%d8%a7%d8%af%d9%8a%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 6", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-6-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%b3%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-6-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%b3%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 5", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-5-%d8%a7%d9%84%d8%ae%d8%a7%d9%85%d8%b3%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-5-%d8%a7%d9%84%d8%ae%d8%a7%d9%85%d8%b3%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 4", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-4-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-4-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 3", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d8%a7%d9%84%d8%ab%d8%a7%d9%84%d8%ab%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d8%a7%d9%84%d8%ab%d8%a7%d9%84%d8%ab%d8%a9/download/"}}}]}];
+            const data = [{"title": "2 \u0642\u0647\u0648\u0629", "episodes": []}, {"title": "\u0644\u0627 \u062a\u0631\u062f \u0648\u0644\u0627 \u062a\u0633\u062a\u0628\u062f\u0644", "episodes": []}, {"title": "\u0645\u064a\u062f \u062a\u064a\u0631\u0645", "episodes": []}];
             let currentSeries = null;
+            let player;
 
-            // دالة التنقل بين الشاشات
-            function showScreen(screenId) {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById(screenId).classList.add('active');
-            }
-
-            // 1. تحميل قائمة المسلسلات
-            const seriesContainer = document.getElementById('series-list');
-            appData.forEach((series, index) => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `<h3>${series.title}</h3><p>${series.episodes.length} حلقة متاحة</p>`;
-                div.onclick = () => loadEpisodes(index);
-                seriesContainer.appendChild(div);
+            // تشغيل المشغل عند التحميل
+            document.addEventListener('DOMContentLoaded', () => {
+                player = new Plyr('#player');
             });
 
-            // 2. تحميل الحلقات
-            function loadEpisodes(seriesIndex) {
-                currentSeries = appData[seriesIndex];
-                document.getElementById('selected-series-title').innerText = currentSeries.title;
-                const container = document.getElementById('episodes-list');
-                container.innerHTML = '';
-
-                currentSeries.episodes.forEach((ep, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'card';
-                    div.innerText = ep.name;
-                    div.onclick = () => loadOptions(index);
-                    container.appendChild(div);
-                });
-                showScreen('screen-episodes');
+            function show(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
             }
 
-            // 3. تحميل خيارات الجودة
-            function loadOptions(episodeIndex) {
-                const ep = currentSeries.episodes[episodeIndex];
-                document.getElementById('selected-episode-title').innerText = ep.name;
-                
-                const watchContainer = document.getElementById('watch-options');
-                const dlContainer = document.getElementById('dl-options');
-                watchContainer.innerHTML = '';
-                dlContainer.innerHTML = '';
+            // 1. المسلسلات
+            const listS = document.getElementById('list-series');
+            data.forEach((item, idx) => {
+                let div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `<h3>${item.title}</h3>`;
+                div.onclick = () => loadEps(idx);
+                listS.appendChild(div);
+            });
 
-                // أزرار المشاهدة
-                const watchKeys = Object.keys(ep.data.watch);
-                if(watchKeys.length === 0) watchContainer.innerHTML = '<p>لا يوجد روابط مشاهدة</p>';
-                
-                watchKeys.forEach(q => {
-                    const a = document.createElement('a');
-                    a.href = ep.data.watch[q];
-                    a.className = 'btn btn-watch';
-                    a.innerText = q;
-                    a.target = "_blank"; // يفتح في صفحة جديدة
-                    watchContainer.appendChild(a);
+            // 2. الحلقات
+            function loadEps(idx) {
+                currentSeries = data[idx];
+                document.getElementById('title-series').innerText = currentSeries.title;
+                const listE = document.getElementById('list-episodes');
+                listE.innerHTML = '';
+                currentSeries.episodes.forEach((ep, eIdx) => {
+                    let div = document.createElement('div');
+                    div.className = 'card';
+                    div.innerHTML = `<span>${ep.name}</span>`;
+                    div.onclick = () => loadQualities(eIdx);
+                    listE.appendChild(div);
                 });
+                show('screen-episodes');
+            }
 
-                // أزرار التحميل
-                const dlKeys = Object.keys(ep.data.download);
-                if(dlKeys.length === 0) dlContainer.innerHTML = '<p>لا يوجد روابط تحميل</p>';
+            // 3. الجودة
+            function loadQualities(eIdx) {
+                const ep = currentSeries.episodes[eIdx];
+                document.getElementById('title-episode').innerText = ep.name;
+                const listQ = document.getElementById('list-quality');
+                listQ.innerHTML = '';
 
-                dlKeys.forEach(q => {
-                    const a = document.createElement('a');
-                    a.href = ep.data.download[q];
-                    a.className = 'btn btn-dl';
-                    a.innerText = q;
-                    dlContainer.appendChild(a);
-                });
+                if (ep.links["720p"]) {
+                    let btn = document.createElement('button');
+                    btn.className = 'btn q-720';
+                    btn.innerText = "تشغيل جودة 720p HD";
+                    btn.onclick = () => playVideo(ep.links["720p"], ep.name);
+                    listQ.appendChild(btn);
+                }
 
-                showScreen('screen-options');
+                if (ep.links["480p"]) {
+                    let btn = document.createElement('button');
+                    btn.className = 'btn q-480';
+                    btn.innerText = "تشغيل جودة 480p SD";
+                    btn.onclick = () => playVideo(ep.links["480p"], ep.name);
+                    listQ.appendChild(btn);
+                }
+                
+                show('screen-quality');
+            }
+
+            // 4. تشغيل الفيديو في المشغل الخاص
+            function playVideo(link, title) {
+                // تحديث المصدر
+                const video = document.getElementById('player');
+                const source = document.getElementById('video-source');
+                
+                document.getElementById('playing-now').innerText = "جاري تشغيل: " + title;
+                
+                source.src = link;
+                video.load(); // إعادة تحميل الفيديو بالرابط الجديد
+                
+                show('screen-player');
+                player.play(); // تشغيل تلقائي
+            }
+
+            function stopAndBack() {
+                player.stop(); // وقف الفيديو
+                show('screen-quality'); // ارجع للقائمة
             }
         </script>
     </body>
