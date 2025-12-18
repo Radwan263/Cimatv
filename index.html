@@ -4,114 +4,134 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Radwan TV</title>
+        <title>Radwan App</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-            body { background-color: #000; color: #fff; font-family: 'Cairo', sans-serif; margin: 0; padding-bottom: 50px; }
+            body { background-color: #121212; color: white; font-family: 'Cairo', sans-serif; margin: 0; padding: 20px; }
             
-            .hero { text-align: center; padding: 20px; background: linear-gradient(to bottom, #222, #000); }
-            h1 { color: #E50914; margin: 0; font-size: 2em; }
+            /* الشاشات */
+            .screen { display: none; animation: fadeIn 0.3s; }
+            .active { display: block; }
             
-            .container { padding: 10px; max-width: 800px; margin: 0 auto; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+            /* الأزرار والكروت */
+            .card { background: #1e1e1e; padding: 15px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #333; cursor: pointer; }
+            .card:hover { background: #2a2a2a; }
             
-            .movie-card {
-                background: #111;
-                border-radius: 10px;
-                margin-bottom: 25px;
-                overflow: hidden;
-                border: 1px solid #333;
-            }
+            h2 { border-bottom: 2px solid #e50914; padding-bottom: 10px; color: #e50914; }
             
-            .poster-area {
-                position: relative;
-                height: 200px;
-                overflow: hidden;
-            }
-            .poster-area img { width: 100%; margin-top: -50px; opacity: 0.6; }
-            .title-overlay {
-                position: absolute; bottom: 10px; right: 10px;
-                font-size: 1.2em; font-weight: bold; text-shadow: 2px 2px 4px #000;
-            }
-            
-            .player-area {
-                padding: 10px;
-                background: #000;
-                text-align: center;
-            }
-            
-            iframe {
-                width: 100%;
-                height: 250px;
-                border: none;
-                border-radius: 8px;
-                background: #222;
-            }
-            
-            .actions {
-                display: flex; gap: 10px; padding: 10px;
-            }
-            
-            .btn {
-                flex: 1; padding: 10px; text-align: center;
-                border-radius: 5px; text-decoration: none; color: white;
-                font-weight: bold; font-size: 0.9em;
-            }
-            .dl-btn { background: #333; }
-            .src-btn { background: #E50914; }
+            .btn { display: block; width: 100%; padding: 12px; margin: 5px 0; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; color: white; }
+            .btn-watch { background: #e50914; }
+            .btn-dl { background: #007bff; }
+            .btn-back { background: #333; margin-bottom: 15px; width: auto; display: inline-block; padding: 8px 20px; }
+
+            .quality-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            a { text-decoration: none; color: white; }
         </style>
     </head>
     <body>
-        <div class="hero">
-            <h1>Radwan TV 🍿</h1>
-            <p>تطبيقك الخاص للمشاهدة المباشرة</p>
+
+        <div id="screen-series" class="screen active">
+            <h2>📺 اختر المسلسل</h2>
+            <div id="series-list"></div>
         </div>
-        <div class="container">
+
+        <div id="screen-episodes" class="screen">
+            <button class="btn btn-back" onclick="showScreen('screen-series')">🔙 رجوع</button>
+            <h2 id="selected-series-title"></h2>
+            <div id="episodes-list"></div>
+        </div>
+
+        <div id="screen-options" class="screen">
+            <button class="btn btn-back" onclick="showScreen('screen-episodes')">🔙 للحلقات</button>
+            <h2 id="selected-episode-title"></h2>
+            
+            <h3>👁️ مشاهدة</h3>
+            <div id="watch-options" class="quality-grid"></div>
+            
+            <hr style="border-color:#333; margin: 20px 0;">
+            
+            <h3>⬇️ تحميل</h3>
+            <div id="dl-options" class="quality-grid"></div>
+        </div>
+
+        <script>
+            // استقبال البيانات من بايثون
+            const appData = [{"title": "2 \u0642\u0647\u0648\u0629", "episodes": [{"name": "Dynamite Kiss \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 11", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-dynamite-kiss-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-11-%d8%a7%d9%84%d8%ad%d8%a7%d8%af%d9%8a%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-dynamite-kiss-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-11-%d8%a7%d9%84%d8%ad%d8%a7%d8%af%d9%8a%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 6", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-6-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%b3%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-6-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%b3%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 5", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-5-%d8%a7%d9%84%d8%ae%d8%a7%d9%85%d8%b3%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-5-%d8%a7%d9%84%d8%ae%d8%a7%d9%85%d8%b3%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 4", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-4-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-4-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 3", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d8%a7%d9%84%d8%ab%d8%a7%d9%84%d8%ab%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d8%a7%d9%84%d8%ab%d8%a7%d9%84%d8%ab%d8%a9/download/"}}}]}, {"title": "\u0644\u0627 \u062a\u0631\u062f \u0648\u0644\u0627 \u062a\u0633\u062a\u0628\u062f\u0644", "episodes": [{"name": "Dynamite Kiss \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 11", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-dynamite-kiss-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-11-%d8%a7%d9%84%d8%ad%d8%a7%d8%af%d9%8a%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-dynamite-kiss-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-11-%d8%a7%d9%84%d8%ad%d8%a7%d8%af%d9%8a%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 6", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-6-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%b3%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-6-%d8%a7%d9%84%d8%b3%d8%a7%d8%af%d8%b3%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 5", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-5-%d8%a7%d9%84%d8%ae%d8%a7%d9%85%d8%b3%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-5-%d8%a7%d9%84%d8%ae%d8%a7%d9%85%d8%b3%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 4", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-4-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-4-%d8%a7%d9%84%d8%b1%d8%a7%d8%a8%d8%b9%d8%a9/download/"}}}, {"name": "What\u2019s in the Box \u0627\u0644\u0645\u0648\u0633\u0645 \u0627\u0644\u0627\u0648\u0644 \u0627\u0644\u062d\u0644\u0642\u0629 3", "data": {"watch": {"HD": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d8%a7%d9%84%d8%ab%d8%a7%d9%84%d8%ab%d8%a9/watch/"}, "download": {"Link": "https://a.asd.homes/%d9%85%d8%b3%d9%84%d8%b3%d9%84-whats-in-the-box-%d8%a7%d9%84%d9%85%d9%88%d8%b3%d9%85-%d8%a7%d9%84%d8%a7%d9%88%d9%84-%d8%a7%d9%84%d8%ad%d9%84%d9%82%d8%a9-3-%d8%a7%d9%84%d8%ab%d8%a7%d9%84%d8%ab%d8%a9/download/"}}}]}];
+            let currentSeries = null;
+
+            // دالة التنقل بين الشاشات
+            function showScreen(screenId) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(screenId).classList.add('active');
+            }
+
+            // 1. تحميل قائمة المسلسلات
+            const seriesContainer = document.getElementById('series-list');
+            appData.forEach((series, index) => {
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `<h3>${series.title}</h3><p>${series.episodes.length} حلقة متاحة</p>`;
+                div.onclick = () => loadEpisodes(index);
+                seriesContainer.appendChild(div);
+            });
+
+            // 2. تحميل الحلقات
+            function loadEpisodes(seriesIndex) {
+                currentSeries = appData[seriesIndex];
+                document.getElementById('selected-series-title').innerText = currentSeries.title;
+                const container = document.getElementById('episodes-list');
+                container.innerHTML = '';
+
+                currentSeries.episodes.forEach((ep, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'card';
+                    div.innerText = ep.name;
+                    div.onclick = () => loadOptions(index);
+                    container.appendChild(div);
+                });
+                showScreen('screen-episodes');
+            }
+
+            // 3. تحميل خيارات الجودة
+            function loadOptions(episodeIndex) {
+                const ep = currentSeries.episodes[episodeIndex];
+                document.getElementById('selected-episode-title').innerText = ep.name;
+                
+                const watchContainer = document.getElementById('watch-options');
+                const dlContainer = document.getElementById('dl-options');
+                watchContainer.innerHTML = '';
+                dlContainer.innerHTML = '';
+
+                // أزرار المشاهدة
+                const watchKeys = Object.keys(ep.data.watch);
+                if(watchKeys.length === 0) watchContainer.innerHTML = '<p>لا يوجد روابط مشاهدة</p>';
+                
+                watchKeys.forEach(q => {
+                    const a = document.createElement('a');
+                    a.href = ep.data.watch[q];
+                    a.className = 'btn btn-watch';
+                    a.innerText = q;
+                    a.target = "_blank"; // يفتح في صفحة جديدة
+                    watchContainer.appendChild(a);
+                });
+
+                // أزرار التحميل
+                const dlKeys = Object.keys(ep.data.download);
+                if(dlKeys.length === 0) dlContainer.innerHTML = '<p>لا يوجد روابط تحميل</p>';
+
+                dlKeys.forEach(q => {
+                    const a = document.createElement('a');
+                    a.href = ep.data.download[q];
+                    a.className = 'btn btn-dl';
+                    a.innerText = q;
+                    dlContainer.appendChild(a);
+                });
+
+                showScreen('screen-options');
+            }
+        </script>
+    </body>
+    </html>
     
-        <div class="movie-card">
-            <div class="poster-area">
-                <img src="https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp">
-                <div class="title-overlay">لا ترد ولا تستبدل</div>
-            </div>
-            
-            <div class="player-area">
-                <p style="color:#777;padding:20px;">⚠️ لم يتم العثور على مشغل مباشر، اضغط بالأسفل</p>
-            </div>
-
-            <div class="actions">
-                <a href="https://a.asd.homes/selary/%d9%85%d8%b3%d9%84%d8%b3%d9%84-%d9%84%d8%a7-%d8%aa%d8%b1%d8%af-%d9%88%d9%84%d8%a7-%d8%aa%d8%b3%d8%aa%d8%a8%d8%af%d9%84/" class="btn src-btn" target="_blank">📺 فتح في نافذة كاملة</a>
-                
-            </div>
-        </div>
-        
-        <div class="movie-card">
-            <div class="poster-area">
-                <img src="https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp">
-                <div class="title-overlay">ميد تيرم</div>
-            </div>
-            
-            <div class="player-area">
-                <p style="color:#777;padding:20px;">⚠️ لم يتم العثور على مشغل مباشر، اضغط بالأسفل</p>
-            </div>
-
-            <div class="actions">
-                <a href="https://a.asd.homes/selary/%d9%85%d8%b3%d9%84%d8%b3%d9%84-%d9%85%d9%8a%d8%af-%d8%aa%d9%8a%d8%b1%d9%85/" class="btn src-btn" target="_blank">📺 فتح في نافذة كاملة</a>
-                
-            </div>
-        </div>
-        
-        <div class="movie-card">
-            <div class="poster-area">
-                <img src="https://a.asd.homes/wp-content/uploads/2022/09/logo333.webp">
-                <div class="title-overlay">2 قهوة</div>
-            </div>
-            
-            <div class="player-area">
-                <p style="color:#777;padding:20px;">⚠️ لم يتم العثور على مشغل مباشر، اضغط بالأسفل</p>
-            </div>
-
-            <div class="actions">
-                <a href="https://a.asd.homes/selary/%d9%85%d8%b3%d9%84%d8%b3%d9%84-2-%d9%82%d9%87%d9%88%d8%a9/" class="btn src-btn" target="_blank">📺 فتح في نافذة كاملة</a>
-                
-            </div>
-        </div>
-        </div></body></html>
