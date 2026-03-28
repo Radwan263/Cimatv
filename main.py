@@ -1,104 +1,115 @@
-import asyncio
-import nest_asyncio
-from playwright.async_api import async_playwright
-# استدعاء مكتبة التخفي الجديدة
-from playwright_stealth import stealth_async
+import flet as ft
+import yt_dlp
+import os
+import threading
 
-nest_asyncio.apply()
+def main(page: ft.Page):
+    # إعدادات الواجهة
+    page.title = "R Cima Plus"
+    page.theme_mode = ft.ThemeMode.DARK
+    page.rtl = True  # تفعيل اللغة العربية تلقائياً
+    page.padding = 20
+    page.scroll = ft.ScrollMode.AUTO
 
-ARABSEED_URLS = [
-    {"title": "لا ترد ولا تستبدل", "url": "https://a.asd.homes/?p=828743"},
-    {"title": "2 قهوة", "url": "https://a.asd.homes/?p=828618"},
-    {"title": "ميدتيرم", "url": "https://a.asd.homes/?p=828728"}
-]
+    url_input = ft.TextField(label="ضع رابط الفيديو أو ابحث هنا...", expand=True, border_color=ft.colors.BLUE_400)
+    results_col = ft.Column(spacing=20)
 
-async def get_links(url):
-    data = {"watch": [], "download": []}
-    async with async_playwright() as p:
-        # تشغيل المتصفح بخصائص حقيقية
-        browser = await p.chromium.launch(headless=True, args=["--disable-blink-features=AutomationControlled"])
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-        )
-        
-        # تفعيل وضع التخفي للصفحة
-        page = await context.new_page()
-        await stealth_async(page)
-        
+    # دالة إظهار الإشعارات السفلية
+    def show_msg(msg, color):
+        page.snack_bar = ft.SnackBar(ft.Text(msg, color=ft.colors.WHITE, weight=ft.FontWeight.BOLD), bgcolor=color)
+        page.snack_bar.open = True
+        page.update()
+
+    # دالة البحث
+    def do_search(query):
         try:
-            print(f"🕵️‍♂️ محاولة تخطي الحماية لـ: {url}")
-            await page.goto(url, timeout=90000)
-            await asyncio.sleep(7) # انتظار أطول عشان لو فيه كابتشا بتتحل لوحدها
-
-            # محاولة الضغط على أي زرار "تخطي" لو ظهر (اختياري)
-            try: await page.click("input[value='Verify you are human']", timeout=2000); except: pass
+            is_url = query.startswith("http")
+            sq = query if is_url else f"ytsearch5:{query}"
+            ydl_opts = {'quiet': True, 'extract_flat': True}
             
-            # سحب الروابط
-            links = await page.evaluate("""() => {
-                return Array.from(document.querySelectorAll('a')).map(a => ({
-                    href: a.href,
-                    text: a.innerText
-                }))
-            }""")
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(sq, download=False)
+                entries = [info] if is_url else info.get('entries', [])
+
+                for e in entries:
+                    if not e: continue
+                    title = e.get('title', 'فيديو بدون عنوان')
+                    thumb = e.get('thumbnail', '')
+                    url = e.get('url') or e.get('webpage_url')
+
+                    # تصميم كارت الفيديو
+                    card = ft.Card(
+                        elevation=8,
+                        content=ft.Container(
+                            padding=15,
+                            content=ft.Column([
+                                ft.Image(src=thumb, height=180, fit=ft.ImageFit.COVER, border_radius=10),
+                                ft.Text(title, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER, size=16),
+                                ft.Row([
+                                    ft.ElevatedButton("تحميل فيديو", icon=ft.icons.VIDEO_FILE, bgcolor=ft.colors.GREEN_700, color=ft.colors.WHITE, on_click=lambda _, u=url: start_dl(u, 'video')),
+                                    ft.ElevatedButton("تحميل صوت", icon=ft.icons.AUDIO_FILE, bgcolor=ft.colors.ORANGE_700, color=ft.colors.WHITE, on_click=lambda _, u=url: start_dl(u, 'audio')),
+                                ], alignment=ft.MainAxisAlignment.CENTER)
+                            ])
+                        )
+                    )
+                    results_col.controls.append(card)
+            show_msg("تم جلب النتائج بنجاح! 🎉", ft.colors.GREEN_700)
+        except Exception as ex:
+            show_msg("حدث خطأ، تأكد من الرابط أو الإنترنت.", ft.colors.RED_700)
+        page.update()
+
+    def search_btn_click(e):
+        if not url_input.value:
+            show_msg("يرجى إدخال كلمة بحث أو رابط أولاً!", ft.colors.RED_700)
+            return
+        show_msg("جاري البحث... لحظات من فضلك 🔍", ft.colors.BLUE_700)
+        results_col.controls.clear()
+        page.update()
+        threading.Thread(target=do_search, args=(url_input.value,)).start()
+
+    # دالة التحميل
+    def dl_logic(url, type):
+        try:
+            # مسار التنزيلات العام في الأندرويد
+            path = "/storage/emulated/0/Download"
+            if not os.path.exists(path):
+                path = os.path.expanduser("~/Downloads")
             
-            print(f"✅ تم العثور على {len(links)} رابط.")
+            ydl_opts = {
+                'outtmpl': f'{path}/%(title)s.%(ext)s',
+                'quiet': True,
+                'no_warnings': True,
+                # جلب الصيغ المباشرة لتجنب مشاكل التحويل
+                'format': 'bestaudio[ext=m4a]/bestaudio' if type == 'audio' else 'best[ext=mp4]/best'
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                ydl.download([url])
+            show_msg("تم التحميل بنجاح في مجلد Downloads! ✅", ft.colors.GREEN_700)
+        except Exception as ex:
+            show_msg("حدث خطأ أثناء التحميل ❌", ft.colors.RED_700)
 
-            for link in links:
-                href = link['href']
-                text = link['text'].strip()
-                if not href or "javascript" in href or href == url: continue
+    def start_dl(url, type):
+        show_msg("بدأ التحميل في الخلفية... يرجى الانتظار ⏳", ft.colors.BLUE_700)
+        threading.Thread(target=dl_logic, args=(url, type)).start()
 
-                # نفس الفلاتر القديمة
-                if "watch" in href or "embed" in href or "مشاهدة" in text:
-                    if "1080" in text: data["watch"].append({"q": "1080", "link": href})
-                    elif "720" in text: data["watch"].append({"q": "720", "link": href})
-                    elif "480" in text: data["watch"].append({"q": "480", "link": href})
-                
-                elif "download" in href or "uptobox" in href or "mediafire" in href:
-                    if "1080" in text: data["download"].append({"q": "1080", "link": href})
-                    elif "720" in text: data["download"].append({"q": "720", "link": href})
-                    elif "480" in text: data["download"].append({"q": "480", "link": href})
+    # ترتيب العناصر في الشاشة
+    header = ft.Row([
+        ft.Icon(ft.icons.PLAY_CIRCLE_FILL, color=ft.colors.BLUE_500, size=40),
+        ft.Text("R Cima Plus", size=28, weight=ft.FontWeight.BOLD, color=ft.colors.BLUE_500)
+    ], alignment=ft.MainAxisAlignment.CENTER)
 
-        except Exception as e:
-            print(f"❌ Error: {e}")
-            
-        await browser.close()
-    
-    # تنظيف التكرار
-    seen = set()
-    unique_watch = []
-    for d in data["watch"]:
-        if d['link'] not in seen:
-            unique_watch.append(d)
-            seen.add(d['link'])
-    data["watch"] = unique_watch
+    search_row = ft.Row([
+        url_input,
+        ft.FloatingActionButton(icon=ft.icons.SEARCH, on_click=search_btn_click, bgcolor=ft.colors.BLUE_600, foreground_color=ft.colors.WHITE)
+    ])
 
-    return data
+    page.add(
+        header,
+        ft.Divider(height=10, color=ft.colors.TRANSPARENT),
+        search_row,
+        ft.Divider(height=20, color=ft.colors.WHITE24),
+        results_col
+    )
 
-async def main():
-    html = """<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>ArabSeed Links</title><style>body{background:#111;color:#fff;font-family:sans-serif;padding:20px}.card{background:#222;margin-bottom:20px;padding:15px;border-radius:10px;border:1px solid #333}h3{color:#e91e63;margin:0 0 10px 0;border-bottom:1px solid #444;padding-bottom:5px}.btn{display:inline-block;padding:8px 15px;margin:5px;background:#333;color:white;text-decoration:none;border-radius:5px;font-size:14px}.watch{background:#4caf50}.dl{background:#2196f3}.no-link{color:#777;font-size:12px}</style></head><body><h1>🎬 آخر الحلقات</h1>"""
-
-    for item in ARABSEED_URLS:
-        links = await get_links(item['url'])
-        html += f'<div class="card"><h3>{item["title"]}</h3>'
-        
-        if links["watch"]:
-            html += '<div>📺 مشاهدة:<br>'
-            for l in links["watch"]: html += f'<a href="{l["link"]}" class="btn watch">{l["q"]}</a>'
-            html += '</div>'
-            
-        if links["download"]:
-            html += '<hr><div>⬇️ تحميل:<br>'
-            for l in links["download"]: html += f'<a href="{l["link"]}" class="btn dl">{l["q"]}</a>'
-            html += '</div>'
-            
-        if not links["watch"] and not links["download"]:
-            html += '<p class="no-link">⚠️ لم يتم تخطي الحماية (Cloudflare Blocking).</p>'
-        html += '</div>'
-
-    html += "</body></html>"
-    with open("index.html", "w", encoding="utf-8") as f: f.write(html)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+ft.app(target=main)
 
